@@ -7,6 +7,18 @@ pkgs.mkShell {
 
   buildInputs = with pkgs; [
     python313
+    python3Packages.pygame
+    python3Packages.moderngl
+    libGL
+    libGLU
+    libxkbcommon
+    libxcb
+    libX11
+    libXrandr
+    libXinerama
+    libXcursor
+    libXxf86vm
+    pkg-config
   ];
 
   shellHook = ''
