@@ -9,6 +9,8 @@ pkgs.mkShell {
     python313
     python3Packages.pygame
     python3Packages.moderngl
+    python313Packages.numpy
+    python3Packages.pillow
     libGL
     libGLU
     libxkbcommon
