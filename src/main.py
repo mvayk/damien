@@ -55,9 +55,21 @@ def build_vao(ctx, program):
 
     return vao
 
-class Scene:
+class Engine:
+    MAXIMUM_FPS = 60
+
+    paused = False
+    time = 0
+    delta_time = 0
+
     def __init__(self):
-        self.ctx = moderngl.get_context()
+        if moderngl.get_context() == None:
+            self.ctx = moderngl.create_context()
+        else:
+            self.ctx = moderngl.get_context()
+
+        pygame.event.set_grab(True)
+        pygame.mouse.set_visible(True)
 
     def render(self, vao):
         now = pygame.time.get_ticks() / 1000.0
@@ -68,9 +80,9 @@ class Scene:
 if __name__ == "__main__":
     print("begun")
 
-    scene = Scene()
-    program = initiate_vertex_shader(scene.ctx)
-    vao = build_vao(scene.ctx, program);
+    engine = Engine()
+    program = initiate_vertex_shader(engine.ctx)
+    vao = build_vao(engine.ctx, program);
 
     while True:
         for event in pygame.event.get():
@@ -78,5 +90,5 @@ if __name__ == "__main__":
                 pygame.quit()
                 sys.exit()
 
-            scene.render(vao)
+            engine.render(vao)
             pygame.display.flip()
