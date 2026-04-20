@@ -1,1 +1,1 @@
-python3 src/main.py
+.\.venv\Scripts\python.exe src/main.py
