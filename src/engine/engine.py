@@ -31,8 +31,8 @@ class Engine:
         pygame.mouse.set_visible(True)
 
         self.program = self.ctx.program(
-            vertex_shader=utils.load_file_contents("shaders/default.vert"),
-            fragment_shader=utils.load_file_contents("shaders/default.frag")
+            vertex_shader=utils.load_file_contents("engine/shaders/default.vert"),
+            fragment_shader=utils.load_file_contents("engine/shaders/default.frag")
         )
 
         x = np.linspace(-1.0, 1.0, 50)
