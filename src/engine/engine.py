@@ -1,11 +1,11 @@
 import math
 import os
-import sys
 import struct
+import sys
 
 import moderngl
-import pygame
 import numpy as np
+import pygame
 
 import utils.utils as utils
 
@@ -14,6 +14,7 @@ import utils.utils as utils
 # constants
 WIN_HEIGHT, WIN_WIDTH = 800, 600
 
+
 class Engine:
     MAXIMUM_FPS = 60
     paused = False
@@ -21,10 +22,12 @@ class Engine:
     delta_time = 0
 
     def __init__(self):
-        self.render_queue = [ ]
+        self.render_queue = []
 
         pygame.init()
-        pygame.display.set_mode((800, 600), flags=pygame.OPENGL | pygame.DOUBLEBUF, vsync=False)
+        pygame.display.set_mode(
+            (800, 600), flags=pygame.OPENGL | pygame.DOUBLEBUF, vsync=False
+        )
         pygame.display.set_caption("Damien's Doom")
         pygame.event.set_grab(False)
         pygame.mouse.set_visible(True)
@@ -39,7 +42,7 @@ class Engine:
 
         self.program = self.ctx.program(
             vertex_shader=utils.load_file_contents("engine/shaders/default.vert"),
-            fragment_shader=utils.load_file_contents("engine/shaders/default.frag")
+            fragment_shader=utils.load_file_contents("engine/shaders/default.frag"),
         )
 
     def get_ctx(self):

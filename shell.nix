@@ -7,7 +7,7 @@ pkgs.mkShell {
 
   buildInputs = with pkgs; [
     python313
-    python3Packages.pygame
+    python3Packages.pygame-ce
     python3Packages.moderngl
     python313Packages.numpy
     python3Packages.pillow
