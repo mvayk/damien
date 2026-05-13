@@ -18,6 +18,8 @@ class Engine:
         self.games = [ ]
         self.render_queue = []
 
+        self.mouse_captured = True;
+
         self.WIN_SIZE = (800, 600)
 
         pygame.init()
@@ -81,7 +83,12 @@ class Engine:
                         print("[ENGINE] Exiting")
                         pygame.quit()
                         sys.exit()
-                if event.type == pygame.MOUSEMOTION:
+                    if event.key == pygame.K_F1:
+                        print("[ENGINE] Releasing Cursor")
+                        self.mouse_captured = not self.mouse_captured
+                        pygame.mouse.set_visible(not self.mouse_captured)
+                        pygame.event.set_grab(self.mouse_captured)
+                if event.type == pygame.MOUSEMOTION and self.mouse_captured:
                     cx, cy = self.camera.win_size[0] // 2, self.camera.win_size[1] // 2
                     if event.pos != (cx, cy):
                         pygame.mouse.set_pos(cx, cy)
