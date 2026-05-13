@@ -7,6 +7,7 @@ import moderngl
 import numpy as np
 import pygame
 
+from engine import nonentity
 import engine.camera as camera
 import utils.utils as utils
 
@@ -44,6 +45,10 @@ class Engine:
             vertex_shader=utils.load_file_contents("engine/shaders/default.vert"),
             fragment_shader=utils.load_file_contents("engine/shaders/default.frag"),
         )
+        self.billboard_program = self.ctx.program(
+            vertex_shader=utils.load_file_contents("engine/shaders/billboard.vert"),
+            fragment_shader=utils.load_file_contents("engine/shaders/billboard.frag"),
+        )
 
     def set_window_caption(self, caption: str):
         pygame.display.set_caption(caption)
@@ -58,11 +63,11 @@ class Engine:
     def get_program(self):
         return self.program
 
-    def add_render_queue(self, vao):
-        self.render_queue.append(vao)
+    def add_render_queue(self, thing):
+        self.render_queue.append(thing)
 
-    def remove_render_queue(self, vao):
-        self.render_queue.remove(vao)
+    def remove_render_queue(self, thing):
+        self.render_queue.remove(thing)
 
     def add_game_queue(self, game):
         self.games.append(game)
@@ -70,9 +75,21 @@ class Engine:
     def remove_game_queue(self, game):
         self.games.remove(game)
 
+    def create_billboard(self, pos, texture_path, size=1.0):
+        from engine.billboard import Billboard
+        billboard = Billboard(self.ctx, self.billboard_program, texture_path, pos, size)
+        self.add_render_queue(billboard)
+        return billboard
+
+    def create_nonentity(self, pos, size, color):
+        from engine.nonentity import Nonentity
+        nonentity = Nonentity(self.ctx, self.program, size, color)
+        self.add_render_queue(nonentity)
+        return nonentity
+
     def handle_events(self):
         if not hasattr(self, "camera"):
-            print("game hasnt initialized camera, events not being checked.")
+            print("[ENGINE] game hasnt initialized camera, events not being handled.")
         else:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -84,7 +101,7 @@ class Engine:
                         pygame.quit()
                         sys.exit()
                     if event.key == pygame.K_F1:
-                        print("[ENGINE] Releasing Cursor" if self.mouse_captured else "[Engine] Capturing Cursor")
+                        print("[ENGINE] Releasing Cursor" if self.mouse_captured else "[ENGINE] Capturing Cursor")
                         self.mouse_captured = not self.mouse_captured
                         pygame.mouse.set_visible(not self.mouse_captured)
                         pygame.event.set_grab(self.mouse_captured)
@@ -104,8 +121,6 @@ class Engine:
         now = pygame.time.get_ticks() / 1000.0
 
         # self.ctx.screen.use()
-        self.ctx.clear(0.3, 0.2, 0.2, 1.0)
-
         self.program['m_proj'].write(self.camera.get_proj_matrix().tobytes()) # type: ignore
         self.program['m_view'].write(self.camera.get_view_matrix().tobytes()) # type: ignore
         self.program['m_model'].write(np.eye(4, dtype='f4').tobytes()) # type: ignore
@@ -121,7 +136,13 @@ class Engine:
             for v in self.games:
                 v.events()
 
+            self.ctx.clear(0.3, 0.2, 0.2, 1.0)
+
+            m_proj = self.camera.get_proj_matrix()
+            m_view = self.camera.get_view_matrix()
+
             for v in self.render_queue:
-                self.render(v)
+                #self.render(v)
+                v.render(m_proj, m_view)
 
             pygame.display.flip()

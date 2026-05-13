@@ -16,7 +16,6 @@ class Camera:
         self.x, self.y, self.z = 0.0, 1.0, 4.0
         self.yaw = -90.0
         self.pitch = 0.0
-        self.speed = 5.0
         self.sensitivity = 0.1
 
     def get_current_position(self):
