@@ -7,14 +7,13 @@ import moderngl
 import numpy as np
 import pygame
 
+import engine.camera as camera
 import utils.utils as utils
 
 # from PIL import Image;
 
+
 # constants
-WIN_HEIGHT, WIN_WIDTH = 800, 600
-
-
 class Engine:
     MAXIMUM_FPS = 60
     paused = False
@@ -24,9 +23,11 @@ class Engine:
     def __init__(self):
         self.render_queue = []
 
+        self.WIN_SIZE = (800, 600)
+
         pygame.init()
         pygame.display.set_mode(
-            (800, 600), flags=pygame.OPENGL | pygame.DOUBLEBUF, vsync=False
+            (self.WIN_SIZE), flags=pygame.OPENGL | pygame.DOUBLEBUF, vsync=False
         )
         pygame.display.set_caption("Damien's Doom")
         pygame.event.set_grab(False)
@@ -45,6 +46,10 @@ class Engine:
             fragment_shader=utils.load_file_contents("engine/shaders/default.frag"),
         )
 
+    def create_camera(self):
+        self.camera = camera.Camera(self.WIN_SIZE)
+        return self.camera
+
     def get_ctx(self):
         return self.ctx
 
@@ -58,16 +63,22 @@ class Engine:
         self.render_queue.remove(vao)
 
     def handle_events(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    print("mousebuttondown")
-            if event.type == pygame.MOUSEMOTION:
-                # dx, dy = event.rel
-                print("mouse moved")
+        if not hasattr(self, "camera"):
+            print("game hasnt initialized camera, events not being checked.")
+        else:
+            # self.camera.update(self.delta_time)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        print("mousebuttondown")
+                if event.type == pygame.MOUSEMOTION:
+                    dx, dy = event.rel
+                    self.camera.mouse_look(dx, dy)
+                    print("mouse moved")
 
     def render(self, vao):
         now = pygame.time.get_ticks() / 1000.0
