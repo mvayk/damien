@@ -84,7 +84,7 @@ class Engine:
                         pygame.quit()
                         sys.exit()
                     if event.key == pygame.K_F1:
-                        print("[ENGINE] Releasing Cursor")
+                        print("[ENGINE] Releasing Cursor" if self.mouse_captured else "[Engine] Capturing Cursor")
                         self.mouse_captured = not self.mouse_captured
                         pygame.mouse.set_visible(not self.mouse_captured)
                         pygame.event.set_grab(self.mouse_captured)
