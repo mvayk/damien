@@ -12,25 +12,22 @@ import utils.utils as utils
 
 # from PIL import Image;
 
-
 # constants
 class Engine:
-    MAXIMUM_FPS = 60
-    paused = False
-    time = 0
-    delta_time = 0
-
     def __init__(self):
+        self.games = [ ]
         self.render_queue = []
 
         self.WIN_SIZE = (800, 600)
 
         pygame.init()
         pygame.display.set_mode(
-            (self.WIN_SIZE), flags=pygame.OPENGL | pygame.DOUBLEBUF, vsync=False
+            (self.WIN_SIZE), flags=pygame.OPENGL | pygame.DOUBLEBUF | pygame.RESIZABLE, vsync=False
         )
-        pygame.display.set_caption("Damien's Doom")
+        pygame.display.set_caption("")
         pygame.event.set_grab(True)
+
+        # camera movement breaks when cursor reaches edge of window border
         pygame.mouse.set_visible(False)
 
         if moderngl.get_context() == None:
@@ -45,6 +42,9 @@ class Engine:
             vertex_shader=utils.load_file_contents("engine/shaders/default.vert"),
             fragment_shader=utils.load_file_contents("engine/shaders/default.frag"),
         )
+
+    def set_window_caption(self, caption: str):
+        pygame.display.set_caption(caption)
 
     def create_camera(self):
         self.camera = camera.Camera(self.WIN_SIZE)
@@ -62,28 +62,36 @@ class Engine:
     def remove_render_queue(self, vao):
         self.render_queue.remove(vao)
 
+    def add_game_queue(self, game):
+        self.games.append(game)
+
+    def remove_game_queue(self, game):
+        self.games.remove(game)
+
     def handle_events(self):
         if not hasattr(self, "camera"):
             print("game hasnt initialized camera, events not being checked.")
         else:
-            # self.camera.update(self.delta_time)
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        print("exiting")
+                        print("[ENGINE] Exiting")
                         pygame.quit()
                         sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        print("mousebuttondown")
                 if event.type == pygame.MOUSEMOTION:
+                    cx, cy = self.camera.win_size[0] // 2, self.camera.win_size[1] // 2
+                    if event.pos != (cx, cy):
+                        pygame.mouse.set_pos(cx, cy)
+                    else:
+                        continue
                     dx, dy = event.rel
                     self.camera.mouse_look(dx, dy)
-                    print("mouse moved")
+                if event.type == pygame.VIDEORESIZE:
+                    self.camera.win_size = (event.w, event.h)
+                    self.ctx.viewport = (0, 0, event.w, event.h)
 
     def render(self, vao):
         now = pygame.time.get_ticks() / 1000.0
@@ -102,6 +110,9 @@ class Engine:
             self.dt = self.clock.tick(60) / 1000.0
 
             self.handle_events()
+
+            for v in self.games:
+                v.events()
 
             for v in self.render_queue:
                 self.render(v)

@@ -1,5 +1,7 @@
+import pygame
 import numpy as np
 
+import utils.utils as utils
 
 class Player:
     def __init__(self, name: str, health: int, speed: int, damage: int):
@@ -8,19 +10,40 @@ class Player:
         self.speed = speed
         self.damage = damage
 
-
 class Game:
     def __init__(self, engine):
         self.engine = engine
-        print("yes")
+        self.engine.add_game_queue(self)
+        self.engine.set_window_caption("Damien's Doom")
 
         self.camera = self.engine.create_camera()
-
         world = World(self.engine.get_ctx(), self.engine.get_program())
         self.engine.add_render_queue(world.vao)
 
         player = Player("damien", 100, 10, 25)
 
+    # to be executed in engine loop
+    def events(self):
+        if not hasattr(self, "camera"):
+            print("game hasnt initialized camera, game events not being checked.")
+        else:
+            # for event in pygame.event.get():
+            #     pass
+
+            front = self.camera.get_front()
+            up = np.array([0.0, 1.0, 0.0], dtype="f4")
+            right = utils.normalize(np.cross(front, up))
+            vel = self.camera.speed * self.engine.dt
+
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_w]:
+                self.camera.change_position(self.camera.get_current_position() + front * vel)
+            if keys[pygame.K_a]:
+                self.camera.change_position(self.camera.get_current_position() - right * vel)
+            if keys[pygame.K_s]:
+                self.camera.change_position(self.camera.get_current_position() - front * vel)
+            if keys[pygame.K_d]:
+                self.camera.change_position(self.camera.get_current_position() + right * vel)
 
 class World:
     def __init__(self, ctx, program):
@@ -29,7 +52,7 @@ class World:
 
         self.vao = self.build_baseplate()
 
-    def build_baseplate(self, size=20, color=(0.3, 0.6, 0.3)):
+    def build_baseplate(self, size=40, color=(0.2, 0.2, 0.2)):
         r, g, b = color
         s = size / 2
 
