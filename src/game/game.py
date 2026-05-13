@@ -27,6 +27,28 @@ class World:
         self.ctx = ctx
         self.program = program
 
+        self.vao = self.build_baseplate()
+
+    def build_baseplate(self, size=20, color=(0.3, 0.6, 0.3)):
+        r, g, b = color
+        s = size / 2
+
+        vertices = np.array([
+            -s, 0, -s,  r, g, b,
+             s, 0, -s,  r, g, b,
+             s, 0,  s,  r, g, b,
+
+            -s, 0, -s,  r, g, b,
+             s, 0,  s,  r, g, b,
+            -s, 0,  s,  r, g, b,
+        ], dtype='f4')
+
+        vbo = self.ctx.buffer(vertices.tobytes())
+        return self.ctx.vertex_array(
+            self.program, [(vbo, "3f 3f", "in_position", "in_color")]
+        )
+
+    def test(self):
         x = np.linspace(-1.0, 1.0, 50)
         y = np.random.rand(50) - 0.5
         r = np.zeros(50)

@@ -30,15 +30,15 @@ class Engine:
             (self.WIN_SIZE), flags=pygame.OPENGL | pygame.DOUBLEBUF, vsync=False
         )
         pygame.display.set_caption("Damien's Doom")
-        pygame.event.set_grab(False)
-        pygame.mouse.set_visible(True)
+        pygame.event.set_grab(True)
+        pygame.mouse.set_visible(False)
 
         if moderngl.get_context() == None:
             self.ctx = moderngl.create_context()
         else:
             self.ctx = moderngl.get_context()
 
-        self.ctx.enable(moderngl.DEPTH_TEST | moderngl.CULL_FACE)
+        self.ctx.enable(moderngl.DEPTH_TEST | moderngl.DEPTH_TEST)
         self.clock = pygame.time.Clock()
 
         self.program = self.ctx.program(
@@ -72,6 +72,11 @@ class Engine:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        print("exiting")
+                        pygame.quit()
+                        sys.exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
                         print("mousebuttondown")
@@ -83,15 +88,18 @@ class Engine:
     def render(self, vao):
         now = pygame.time.get_ticks() / 1000.0
 
-        self.ctx.screen.use()
-        self.ctx.clear(0.0, 0.0, 0.0, 1.0)
+        # self.ctx.screen.use()
+        self.ctx.clear(0.3, 0.2, 0.2, 1.0)
 
-        vao.render(moderngl.TRIANGLE_STRIP)
+        self.program['m_proj'].write(self.camera.get_proj_matrix().tobytes()) # type: ignore
+        self.program['m_view'].write(self.camera.get_view_matrix().tobytes()) # type: ignore
+        self.program['m_model'].write(np.eye(4, dtype='f4').tobytes()) # type: ignore
+
+        vao.render()
 
     def run(self):
         while True:
-            dt = self.clock.tick(60) / 1000.0
-            # print(game.health)
+            self.dt = self.clock.tick(60) / 1000.0
 
             self.handle_events()
 

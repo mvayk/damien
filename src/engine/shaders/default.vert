@@ -1,11 +1,15 @@
-#version 330
+#version 330 core
 
-in vec2 in_vert;
+in vec3 in_position;
 in vec3 in_color;
+
+uniform mat4 m_model;
+uniform mat4 m_view;
+uniform mat4 m_proj;
 
 out vec3 v_color;
 
 void main() {
+    gl_Position = m_proj * m_view * m_model * vec4(in_position, 1.0);
     v_color = in_color;
-    gl_Position = vec4(in_vert, 0.0, 1.0);
 }
