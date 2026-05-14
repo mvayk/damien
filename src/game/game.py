@@ -60,6 +60,10 @@ class Game:
         self.enemies.append(enemy)
         return enemy
 
+    def destroy_enemy(self, enemy):
+        self.enemies.remove(enemy)
+        enemy.destroy()
+
     def create_world(self):
         # baseplate
         self.engine.create_structure(
@@ -91,6 +95,7 @@ class Game:
             for e in self.enemies:
                 e.update(player_position, self.engine.dt)
 
+
             front = self.camera.get_front()
             up = np.array([0.0, 1.0, 0.0], dtype="f4")
             right = utils.normalize(np.cross(front, up))
@@ -107,6 +112,9 @@ class Game:
                 move -= front
             if keys[pygame.K_d]:
                 move += right
+            if keys[pygame.K_f]:
+                for e in self.enemies:
+                    self.destroy_enemy(e)
 
             if np.linalg.norm(move) > 0:
                 move = utils.normalize(move)

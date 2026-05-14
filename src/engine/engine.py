@@ -78,7 +78,12 @@ class Engine:
         self.render_queue.append(thing)
 
     def remove_render_queue(self, thing):
-        self.render_queue.remove(thing)
+        try:
+            self.render_queue.remove(thing)
+            print(f"[ENGINE] Removed {thing}")
+        except ValueError:
+            print(f"[ENGINE] Attempted to remove {thing} from render queue")
+            pass
 
     def add_game_queue(self, game):
         self.games.append(game)
@@ -106,7 +111,7 @@ class Engine:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                if event.type == pygame.KEYDOWN:
+                if event.type== pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         print("[ENGINE] Exiting")
                         pygame.quit()
