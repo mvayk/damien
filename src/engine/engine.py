@@ -29,7 +29,9 @@ class Engine:
         pygame.display.set_caption("")
         pygame.event.set_grab(True)
 
-        # camera movement breaks when cursor reaches edge of window border
+        # same in vertex shader
+        self.scale = 1
+
         pygame.mouse.set_visible(False)
 
         if moderngl.get_context() == None:
@@ -37,12 +39,12 @@ class Engine:
         else:
             self.ctx = moderngl.get_context()
 
-        self.ctx.enable(moderngl.DEPTH_TEST | moderngl.DEPTH_TEST)
+        self.ctx.enable(moderngl.DEPTH_TEST)
         self.clock = pygame.time.Clock()
 
         self.program = self.ctx.program(
-            vertex_shader=utils.load_file_contents("engine/shaders/default.vert"),
-            fragment_shader=utils.load_file_contents("engine/shaders/default.frag"),
+            vertex_shader=utils.load_file_contents("engine/shaders/nonentities.vert"),
+            fragment_shader=utils.load_file_contents("engine/shaders/nonentities.frag"),
         )
         self.billboard_program = self.ctx.program(
             vertex_shader=utils.load_file_contents("engine/shaders/billboard.vert"),
@@ -53,7 +55,19 @@ class Engine:
             fragment_shader=utils.load_file_contents("engine/shaders/skybox.frag"),
         )
 
-        self.program["light_pos"].value = (0, 20, 0) # type: ignore
+        self.program["light_pos"].value = (0, 0, 0) # type: ignore
+
+    def set_sun_position(self, position):
+        self.program["light_pos"].value = (position) # type: ignore
+
+    def get_sun_position(self):
+        return self.program["light_pos"].value # type: ignore
+
+    def scalify(self, value):
+        try:
+            return tuple(v * self.scale for v in value)
+        except TypeError:
+            return value * self.scale if value != 0 else 0
 
     def create_skybox(self, top, bottom):
         from engine.skybox import Skybox
@@ -91,17 +105,20 @@ class Engine:
     def remove_game_queue(self, game):
         self.games.remove(game)
 
-    def create_billboard(self, pos, texture_path, size=1.0):
+    def create_billboard(self, pos, texture_path, size=1.0, follow_camera=False):
         from engine.billboard import Billboard
-        billboard = Billboard(self.ctx, self.billboard_program, texture_path, pos, size)
+        billboard = Billboard(self.ctx, self.billboard_program, texture_path, pos, size, follow_camera)
         self.add_render_queue(billboard)
         return billboard
 
     def create_structure(self, p1, p2, p3, p4, color):
         from engine.nonentity import Nonentity
-        nonentity = Nonentity(self.ctx, self.program, p1, p2, p3, p4, color)
+        nonentity = Nonentity(self, p1, p2, p3, p4, color)
         self.add_render_queue(nonentity)
         return nonentity
+
+    # todo: entities
+    #       collisions
 
     def handle_events(self):
         if not hasattr(self, "camera"):

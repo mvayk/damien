@@ -3,10 +3,11 @@ import numpy as np
 import pygame
 
 class Billboard:
-    def __init__(self, ctx, program, texture_path, pos, size=1.0):
+    def __init__(self, ctx, program, texture_path, pos, size=1.0, follow_camera=False):
         self.ctx = ctx
         self.program = program
         self.pos = np.array(pos, dtype="f4")
+        self.follow_camera = follow_camera
         s = size / 2
         vertices = np.array([
             -s,  0.0,  0.0, 1.0,
@@ -27,4 +28,5 @@ class Billboard:
         self.program["m_proj"].write(m_proj.tobytes())
         self.program["m_view"].write(m_view.tobytes())
         self.program["enemy_pos"].write(self.pos.tobytes())
+        self.program["follow_camera"] = self.follow_camera
         self.vao.render()

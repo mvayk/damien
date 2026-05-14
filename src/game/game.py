@@ -1,6 +1,7 @@
 import time
 import pygame
 import numpy as np
+import random
 
 import utils.utils as utils
 
@@ -21,7 +22,7 @@ class Enemy:
         self.speed = speed
         self.damage = damage
         self.pos = np.array(pos, dtype='f4')
-        self.billboard = engine.create_billboard(pos, texture_path, size)
+        self.billboard = engine.create_billboard(pos, texture_path, size, False)
 
     def update(self, player_pos, dt):
         direction = player_pos - self.pos
@@ -52,7 +53,7 @@ class Game:
 
         self.enemies = [ ]
 
-        self.engine.create_skybox((0.3, 0.1, 0.1), (0.5, 0.3, 0.3))
+        self.engine.create_skybox((0.3, 0.1, 0.1), (0.1, 0.05, 0.05))
         self.create_world()
 
     def create_enemy(self, health, speed, damage, pos, texture_path):
@@ -79,7 +80,10 @@ class Game:
         self.engine.create_structure((-20, 0, -20), (-20, 0, 20), (-20, height, 20), (-20, height, -20), color=(0.3, 0.3, 0.3))
         self.engine.create_structure((20, 0, -20), (20, 0, 20), (20, height, 20), (20, height, -20), color=(0.1, 0.1, 0.1))
 
-        # self.engine.create_billboard((2, 2, 2), "assets/test.jpg", 8)
+        #self.engine.set_sun_position(self.engine.scalify((35, 42, 0)))
+        self.engine.set_sun_position((35, 42, 0))
+        self.engine.create_billboard((35, 40, 0), "assets/overseer.png", 32, True)
+
         self.create_enemy(100, 2, 2, (0, 0, 0), "assets/test.png")
 
     # to be executed in engine loop
@@ -94,7 +98,6 @@ class Game:
 
             for e in self.enemies:
                 e.update(player_position, self.engine.dt)
-
 
             front = self.camera.get_front()
             up = np.array([0.0, 1.0, 0.0], dtype="f4")
