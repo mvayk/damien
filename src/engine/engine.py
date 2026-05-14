@@ -50,6 +50,8 @@ class Engine:
             fragment_shader=utils.load_file_contents("engine/shaders/billboard.frag"),
         )
 
+        self.program["light_pos"].value = (0, 20, 0) # type: ignore
+
     def set_window_caption(self, caption: str):
         pygame.display.set_caption(caption)
 
@@ -81,9 +83,9 @@ class Engine:
         self.add_render_queue(billboard)
         return billboard
 
-    def create_nonentity(self, pos, size, color):
+    def create_structure(self, p1, p2, p3, p4, color):
         from engine.nonentity import Nonentity
-        nonentity = Nonentity(self.ctx, self.program, size, color)
+        nonentity = Nonentity(self.ctx, self.program, p1, p2, p3, p4, color)
         self.add_render_queue(nonentity)
         return nonentity
 
@@ -123,7 +125,7 @@ class Engine:
         # self.ctx.screen.use()
         self.program['m_proj'].write(self.camera.get_proj_matrix().tobytes()) # type: ignore
         self.program['m_view'].write(self.camera.get_view_matrix().tobytes()) # type: ignore
-        self.program['m_model'].write(np.eye(4, dtype='f4').tobytes()) # type: ignore
+        self.program['m_model'].write(np.eye(4, dtype='f4').tobytes())        # type: ignore
 
         vao.render()
 

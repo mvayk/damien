@@ -3,24 +3,23 @@ import numpy as np
 import pygame
 
 class Nonentity:
-    def __init__(self, ctx, program, size, color):
+    def __init__(self, ctx, program, p1, p2, p3, p4, color, normal=(0, 1, 0)):
+        # currently only generates flat planes
         self.ctx = ctx
         self.program = program
-
         r, g, b = color
-        s = size / 2
+        nx, ny, nz = normal
         vertices = np.array([
-            -s, 0, -s,  r, g, b,
-             s, 0, -s,  r, g, b,
-             s, 0,  s,  r, g, b,
-            -s, 0, -s,  r, g, b,
-             s, 0,  s,  r, g, b,
-            -s, 0,  s,  r, g, b,
+           *p1, r, g, b, nx, ny, nz,
+           *p2, r, g, b, nx, ny, nz,
+           *p3, r, g, b, nx, ny, nz,
+           *p1, r, g, b, nx, ny, nz,
+           *p3, r, g, b, nx, ny, nz,
+           *p4, r, g, b, nx, ny, nz,
         ], dtype='f4')
-
         vbo = self.ctx.buffer(vertices.tobytes())
-        self.vao =  self.ctx.vertex_array(
-            self.program, [(vbo, "3f 3f", "in_position", "in_color")]
+        self.vao = self.ctx.vertex_array(
+            self.program, [(vbo, "3f 3f 3f", "in_position", "in_color", "in_normal")]
         )
 
     def render(self, m_proj, m_view):

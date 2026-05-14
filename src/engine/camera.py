@@ -8,7 +8,7 @@ import pygame
 import utils.utils as utils
 
 class Camera:
-    def __init__(self, win_size, fov=60, near=0.1, far=500):
+    def __init__(self, win_size, fov=100, near=0.1, far=500):
         self.win_size = win_size
         self.fov = fov
         self.near = near
@@ -21,10 +21,11 @@ class Camera:
     def get_current_position(self):
         return np.array([self.x, self.y, self.z], dtype="f4")
 
-    def change_position(self, new_position):
-        self.x = float(new_position[0])
-        self.y = 1.0  # locked
-        self.z = float(new_position[2])
+    # artifical boundary clamping
+    def change_position(self, new_position, bounds=19.7):
+        self.x = float(max(-bounds, min(bounds, new_position[0])))
+        self.y = 1.0
+        self.z = float(max(-bounds, min(bounds, new_position[2])))
 
     def get_view_matrix(self):
         pos = self.get_current_position()

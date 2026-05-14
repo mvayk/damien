@@ -2,14 +2,12 @@ from pathlib import Path
 
 import numpy as np
 
-
 def load_file_contents(path):
     base = Path(__file__).parent.parent
     absolute = (base / path).resolve()
 
     return absolute.read_text(encoding="utf8")
     # return Path(path).read_text(encoding='utf8')
-
 
 # glm replacement
 def perspective(fov_deg, aspect, near, far):
