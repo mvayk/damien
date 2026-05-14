@@ -1,3 +1,4 @@
+import time
 import pygame
 import numpy as np
 
@@ -14,7 +15,8 @@ class Player:
         self.position = (0, 0, 0)
 
 class Enemy:
-    def __init__(self, engine, health, speed, damage, pos, texture_path, size=2.0):
+    def __init__(self, engine, health, speed, damage, pos, texture_path, size=1):
+        self.engine = engine
         self.health = health
         self.speed = speed
         self.damage = damage
@@ -29,6 +31,9 @@ class Enemy:
             direction = utils.normalize(direction)
             self.pos += direction * self.speed * dt
             self.billboard.pos = self.pos
+
+    def destroy(self):
+        self.engine.remove_render_queue(self.billboard)
 
     def is_dead(self):
         return self.health <= 0
@@ -46,6 +51,8 @@ class Game:
         self.player = Player(100, 10, 25)
 
         self.enemies = [ ]
+
+        self.engine.create_skybox((0.3, 0.1, 0.1), (0.5, 0.3, 0.3))
         self.create_world()
 
     def create_enemy(self, health, speed, damage, pos, texture_path):
@@ -69,7 +76,7 @@ class Game:
         self.engine.create_structure((20, 0, -20), (20, 0, 20), (20, height, 20), (20, height, -20), color=(0.1, 0.1, 0.1))
 
         # self.engine.create_billboard((2, 2, 2), "assets/test.jpg", 8)
-        self.create_enemy(100, 2, 2, (0, 0, 0), "assets/test.jpg")
+        self.create_enemy(100, 2, 2, (0, 0, 0), "assets/test.png")
 
     # to be executed in engine loop
     def events(self):

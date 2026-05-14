@@ -7,7 +7,6 @@ import moderngl
 import numpy as np
 import pygame
 
-from engine import nonentity
 import engine.camera as camera
 import utils.utils as utils
 
@@ -49,8 +48,18 @@ class Engine:
             vertex_shader=utils.load_file_contents("engine/shaders/billboard.vert"),
             fragment_shader=utils.load_file_contents("engine/shaders/billboard.frag"),
         )
+        self.skybox_program = self.ctx.program(
+            vertex_shader=utils.load_file_contents("engine/shaders/skybox.vert"),
+            fragment_shader=utils.load_file_contents("engine/shaders/skybox.frag"),
+        )
 
         self.program["light_pos"].value = (0, 20, 0) # type: ignore
+
+    def create_skybox(self, top, bottom):
+        from engine.skybox import Skybox
+        skybox = Skybox(self.ctx, self.skybox_program, top, bottom)
+        self.add_render_queue(skybox)
+        return skybox
 
     def set_window_caption(self, caption: str):
         pygame.display.set_caption(caption)
@@ -138,7 +147,7 @@ class Engine:
             for v in self.games:
                 v.events()
 
-            self.ctx.clear(0.3, 0.2, 0.2, 1.0)
+            self.ctx.clear(0.0, 0.0, 0.0, 0.0)
 
             m_proj = self.camera.get_proj_matrix()
             m_view = self.camera.get_view_matrix()
