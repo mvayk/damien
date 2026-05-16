@@ -2,6 +2,7 @@ import math
 import os
 import struct
 import sys
+import time
 
 import moderngl
 import numpy as np
@@ -10,6 +11,7 @@ import pygame
 from engine.text import Text
 from engine.nonentity import Nonentity
 from engine.billboard import Billboard
+from engine.entity import Entity
 
 import engine.camera as camera
 import utils.utils as utils
@@ -24,6 +26,7 @@ class Engine:
         self.entities = [ ]
 
         self.mouse_captured = True;
+        self.dt = 0
 
         self.WIN_SIZE = (800, 600)
 
@@ -91,6 +94,11 @@ class Engine:
         self.camera = camera.Camera(self.WIN_SIZE)
         return self.camera
 
+    def create_entity(self, pos, hitbox, form):
+        entity = Entity(self, pos, hitbox, form)
+        self.add_entity_queue(entity)
+        return entity
+
     def get_ctx(self):
         return self.ctx
 
@@ -145,7 +153,7 @@ class Engine:
     def update_text(self, text, new_value):
         text.update_text(new_value)
 
-    # todo: entities
+    # todo: idek
     #       collisions
 
     def handle_events(self):
@@ -182,6 +190,7 @@ class Engine:
     def run(self):
         while True:
             self.dt = self.clock.tick(60) / 1000.0
+            #time.sleep(self.dt)
 
             self.handle_events()
 
@@ -202,5 +211,8 @@ class Engine:
             for v in self.render_queue:
                 if isinstance(v, Text):
                     v.render(m_proj, m_view)
+
+            for e in self.entities:
+                e._update(self.dt)
 
             pygame.display.flip()

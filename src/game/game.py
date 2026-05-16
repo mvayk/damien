@@ -5,6 +5,8 @@ import random
 
 import utils.utils as utils
 
+from engine.entity import Entity
+
 class Player:
     def __init__(self, health: int, speed: int, damage: int, score: int = 0):
         self.health = health
@@ -15,32 +17,42 @@ class Player:
 
         self.position = (0, 0, 0)
 
-class Enemy:
-    def __init__(self, engine, health, speed, damage, pos, texture_path, size=1):
-        self.engine = engine
+    def get_health_stylized(self):
+        return f"Health: {self.health}"
+
+    def take_damage(self, amount):
+        self.health -= amount
+
+class Enemy(Entity):
+    def __init__(self, engine, pos, texture_path, health=100, speed=2, damage=10, size=1.0, hitbox=(0.5, 2.0)):
+        super().__init__(engine, pos, hitbox, form=None)
         self.health = health
         self.speed = speed
         self.damage = damage
-        self.pos = np.array(pos, dtype='f4')
-        self.billboard = engine.create_billboard(pos, texture_path, size, False)
+        self.form = None
 
-    def update(self, player_pos, dt):
+        self.engine.create_entity(pos, hitbox, self.form)
+
+        billboard = engine.create_billboard(pos, texture_path, size)
+        self.update_form(billboard)
+
+    def update(self, dt):
+        player_pos = np.array(self.engine.camera.get_current_position(), dtype='f4')
         direction = player_pos - self.pos
         direction[1] = 0.0
         dist = np.linalg.norm(direction)
         if dist > 0.5:
-            direction = utils.normalize(direction)
-            self.pos += direction * self.speed * dt
-            self.billboard.pos = self.pos
+            self.update_pos(self.pos + utils.normalize(direction) * self.speed * dt)
 
-    def destroy(self):
-        self.engine.remove_render_queue(self.billboard)
+    def take_damage(self, amount):
+        self.health -= amount
 
     def is_dead(self):
         return self.health <= 0
 
-    def take_damage(self, amount):
-        self.health -= amount
+    def destroy(self):
+        self.engine.remove_render_queue(self.form)
+        self.engine.remove_entity_queue(self)
 
 class Game:
     def __init__(self, engine):
@@ -51,16 +63,15 @@ class Game:
         self.camera = self.engine.create_camera()
         self.player = Player(100, 10, 25)
 
-        text = self.engine.draw_text(str(self.player.health), (100, 100))
-        #self.engine.update_text(text, "fa")
+        self.health_text = self.engine.draw_text(self.player.get_health_stylized(), (100, 100))
 
         self.enemies = [ ]
 
         self.engine.create_skybox((0.3, 0.1, 0.1), (0.1, 0.05, 0.05))
         self.create_world()
 
-    def create_enemy(self, health, speed, damage, pos, texture_path):
-        enemy = Enemy(self.engine, health, speed, damage, pos, texture_path)
+    def create_enemy(self, pos, texture_path, health=100, speed=2, damage=10, size=1.0, hitbox=(0.5, 2.0)):
+        enemy = Enemy(self.engine, pos, texture_path, health, speed, damage, size, hitbox)
         self.enemies.append(enemy)
         return enemy
 
@@ -87,7 +98,7 @@ class Game:
         self.engine.set_sun_position((35, 42, 0))
         self.engine.create_billboard((35, 40, 0), "assets/overseer.png", 24, True)
 
-        self.create_enemy(100, 2, 2, (0, 0, 0), "assets/test.png")
+        self.create_enemy((0, 0, 0), "assets/test.png", health=100, speed=2, damage=2)
 
     # to be executed in engine loop
     def events(self):
@@ -96,11 +107,11 @@ class Game:
         else:
             # for event in pygame.event.get():
             #     pass
-
             player_position = self.player.position = self.camera.get_current_position()
+            self.engine.update_text(self.health_text, self.player.get_health_stylized())
 
             for e in self.enemies:
-                e.update(player_position, self.engine.dt)
+                e.update(self.engine.dt)
 
             front = self.camera.get_front()
             front_dir = self.camera.get_front_dir()
