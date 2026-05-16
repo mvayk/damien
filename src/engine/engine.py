@@ -7,6 +7,10 @@ import moderngl
 import numpy as np
 import pygame
 
+from engine.text import Text
+from engine.nonentity import Nonentity
+from engine.billboard import Billboard
+
 import engine.camera as camera
 import utils.utils as utils
 
@@ -16,7 +20,8 @@ import utils.utils as utils
 class Engine:
     def __init__(self):
         self.games = [ ]
-        self.render_queue = []
+        self.render_queue = [ ]
+        self.entities = [ ]
 
         self.mouse_captured = True;
 
@@ -54,6 +59,10 @@ class Engine:
             vertex_shader=utils.load_file_contents("engine/shaders/skybox.vert"),
             fragment_shader=utils.load_file_contents("engine/shaders/skybox.frag"),
         )
+        self.text_program = self.ctx.program(
+            vertex_shader=utils.load_file_contents("engine/shaders/text.vert"),
+            fragment_shader=utils.load_file_contents("engine/shaders/text.frag"),
+        )
 
         self.program["light_pos"].value = (0, 0, 0) # type: ignore
 
@@ -85,37 +94,56 @@ class Engine:
     def get_ctx(self):
         return self.ctx
 
-    def get_program(self):
-        return self.program
-
     def add_render_queue(self, thing):
         self.render_queue.append(thing)
 
     def remove_render_queue(self, thing):
         try:
-            self.render_queue.remove(thing)
+            self.games.remove(thing)
             print(f"[ENGINE] Removed {thing}")
         except ValueError:
-            print(f"[ENGINE] Attempted to remove {thing} from render queue")
+            print(f"[ENGINE] Attempted to remove {thing} from game queue")
             pass
 
     def add_game_queue(self, game):
         self.games.append(game)
 
-    def remove_game_queue(self, game):
-        self.games.remove(game)
+    def remove_game_queue(self, thing):
+        try:
+            self.games.remove(thing)
+            print(f"[ENGINE] Removed {thing}")
+        except ValueError:
+            print(f"[ENGINE] Attempted to remove {thing} from game queue")
+            pass
+
+    def add_entity_queue(self, entity):
+        self.entities.append(entity)
+
+    def remove_entity_queue(self, entity):
+        try:
+            self.games.remove(entity)
+            print(f"[ENGINE] Removed {entity}")
+        except ValueError:
+            print(f"[ENGINE] Attempted to remove {entity} from entity queue")
+            pass
 
     def create_billboard(self, pos, texture_path, size=1.0, follow_camera=False):
-        from engine.billboard import Billboard
         billboard = Billboard(self.ctx, self.billboard_program, texture_path, pos, size, follow_camera)
         self.add_render_queue(billboard)
         return billboard
 
     def create_structure(self, p1, p2, p3, p4, color):
-        from engine.nonentity import Nonentity
         nonentity = Nonentity(self, p1, p2, p3, p4, color)
         self.add_render_queue(nonentity)
         return nonentity
+
+    def draw_text(self, value, position=(0, 0), font_size=32, color=(255, 255, 255)):
+        text = Text(self, position, str(value), font_size, color)
+        self.add_render_queue(text)
+        return text
+
+    def update_text(self, text, new_value):
+        text.update_text(new_value)
 
     # todo: entities
     #       collisions
@@ -147,18 +175,9 @@ class Engine:
                     dx, dy = event.rel
                     self.camera.mouse_look(dx, dy)
                 if event.type == pygame.VIDEORESIZE:
+                    self.WIN_SIZE = (event.w, event.h)
                     self.camera.win_size = (event.w, event.h)
                     self.ctx.viewport = (0, 0, event.w, event.h)
-
-    def render(self, vao):
-        now = pygame.time.get_ticks() / 1000.0
-
-        # self.ctx.screen.use()
-        self.program['m_proj'].write(self.camera.get_proj_matrix().tobytes()) # type: ignore
-        self.program['m_view'].write(self.camera.get_view_matrix().tobytes()) # type: ignore
-        self.program['m_model'].write(np.eye(4, dtype='f4').tobytes())        # type: ignore
-
-        vao.render()
 
     def run(self):
         while True:
@@ -169,13 +188,19 @@ class Engine:
             for v in self.games:
                 v.events()
 
-            self.ctx.clear(0.0, 0.0, 0.0, 0.0)
+            #self.ctx.screen.use()
+            self.ctx.clear(0.0, 0.0, 0.0, 1.0)
 
             m_proj = self.camera.get_proj_matrix()
             m_view = self.camera.get_view_matrix()
 
+            # why is text so hard to render
             for v in self.render_queue:
-                #self.render(v)
-                v.render(m_proj, m_view)
+                if not isinstance(v, Text):
+                    v.render(m_proj, m_view)
+
+            for v in self.render_queue:
+                if isinstance(v, Text):
+                    v.render(m_proj, m_view)
 
             pygame.display.flip()

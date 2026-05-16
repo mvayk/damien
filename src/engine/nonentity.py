@@ -7,7 +7,7 @@ class Nonentity:
         self.camera = self.engine.camera
 
         self.ctx = engine.get_ctx()
-        self.program = engine.get_program()
+        self.program = engine.program
 
         p1 = self.engine.scalify(p1)
         p2 = self.engine.scalify(p2)

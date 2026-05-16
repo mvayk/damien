@@ -37,6 +37,16 @@ class Camera:
         aspect = self.win_size[0] / self.win_size[1]
         return utils.perspective(self.fov, aspect, self.near, self.far)
 
+    def get_front_dir(self):
+        yaw_r = np.radians(self.yaw)
+        pitch_r = np.radians(self.pitch)
+        front = np.array([
+            np.cos(yaw_r) * np.cos(pitch_r),
+            np.sin(0),
+            np.sin(yaw_r) * np.cos(pitch_r),
+        ], dtype="f4")
+        return utils.normalize(front)
+
     def get_front(self):
         yaw_r = np.radians(self.yaw)
         pitch_r = np.radians(self.pitch)

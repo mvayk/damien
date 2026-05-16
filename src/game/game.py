@@ -51,6 +51,9 @@ class Game:
         self.camera = self.engine.create_camera()
         self.player = Player(100, 10, 25)
 
+        text = self.engine.draw_text(str(self.player.health), (100, 100))
+        #self.engine.update_text(text, "fa")
+
         self.enemies = [ ]
 
         self.engine.create_skybox((0.3, 0.1, 0.1), (0.1, 0.05, 0.05))
@@ -82,7 +85,7 @@ class Game:
 
         #self.engine.set_sun_position(self.engine.scalify((35, 42, 0)))
         self.engine.set_sun_position((35, 42, 0))
-        self.engine.create_billboard((35, 40, 0), "assets/overseer.png", 32, True)
+        self.engine.create_billboard((35, 40, 0), "assets/overseer.png", 24, True)
 
         self.create_enemy(100, 2, 2, (0, 0, 0), "assets/test.png")
 
@@ -100,6 +103,7 @@ class Game:
                 e.update(player_position, self.engine.dt)
 
             front = self.camera.get_front()
+            front_dir = self.camera.get_front_dir()
             up = np.array([0.0, 1.0, 0.0], dtype="f4")
             right = utils.normalize(np.cross(front, up))
             #vel = self.camera.speed * self.engine.dt
@@ -108,11 +112,11 @@ class Game:
             keys = pygame.key.get_pressed()
             move = np.array([0.0, 0.0, 0.0], dtype='f4')
             if keys[pygame.K_w]:
-                move += front
+                move += front_dir
             if keys[pygame.K_a]:
                 move -= right
             if keys[pygame.K_s]:
-                move -= front
+                move -= front_dir
             if keys[pygame.K_d]:
                 move += right
             if keys[pygame.K_f]:
