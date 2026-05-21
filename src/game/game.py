@@ -16,9 +16,7 @@ class Player:
 
         self.score = score
 
-        self.position = (0, 0, 0)
-
-        #self.entity = self.engine.create_entity(self.position, (1, 2), None)
+        self.entity = self.engine.create_entity((0, 0, 0), (1, 2), None)
 
     def get_health_stylized(self):
         return f"Health: {self.health}"
@@ -110,8 +108,9 @@ class Game:
         else:
             # for event in pygame.event.get():
             #     pass
-            player_position = self.player.position = self.camera.get_current_position()
+            player_position = self.player.entity.pos = self.camera.get_current_position()
             self.engine.update_text(self.health_text, self.player.get_health_stylized())
+            print(player_position)
 
             for e in self.enemies:
                 e.update(self.engine.dt)

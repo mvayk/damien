@@ -1,6 +1,7 @@
 import numpy as np
 import pygame
 
+# entity controls anything dynamic, collisions, etc
 class Entity:
     def __init__(self, engine, pos, hitbox, form=None):
         self.engine = engine
@@ -20,5 +21,5 @@ class Entity:
     def _update(self, dt):
         entities = self.engine.entities
 
-        for e in entities:
-            print(f"{e.form}, {e.pos}")
+        for e in entities: pass
+            #print(f"{e.form}, {e.pos}")
