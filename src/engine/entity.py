@@ -17,4 +17,8 @@ class Entity:
         if self.form:
             self.form.pos = self.pos
 
-    def _update(self, dt): pass
+    def _update(self, dt):
+        entities = self.engine.entities
+
+        for e in entities:
+            print(f"{e.form}, {e.pos}")

@@ -8,7 +8,8 @@ import utils.utils as utils
 from engine.entity import Entity
 
 class Player:
-    def __init__(self, health: int, speed: int, damage: int, score: int = 0):
+    def __init__(self, engine, health: int, speed: int, damage: int, score: int = 0):
+        self.engine = engine
         self.health = health
         self.speed = speed
         self.damage = damage
@@ -17,32 +18,33 @@ class Player:
 
         self.position = (0, 0, 0)
 
+        #self.entity = self.engine.create_entity(self.position, (1, 2), None)
+
     def get_health_stylized(self):
         return f"Health: {self.health}"
 
     def take_damage(self, amount):
         self.health -= amount
 
-class Enemy(Entity):
-    def __init__(self, engine, pos, texture_path, health=100, speed=2, damage=10, size=1.0, hitbox=(0.5, 2.0)):
-        super().__init__(engine, pos, hitbox, form=None)
+class Enemy:
+    def __init__(self, engine, pos, texture_path, health=100, speed=2, damage=10, size=1.0, hitbox=(0.5, 2.0), form=None):
+        self.engine = engine
         self.health = health
         self.speed = speed
         self.damage = damage
-        self.form = None
 
-        self.engine.create_entity(pos, hitbox, self.form)
-
+        self.entity = self.engine.create_entity(pos, hitbox, None)
         billboard = engine.create_billboard(pos, texture_path, size)
-        self.update_form(billboard)
+        self.entity.update_form(billboard)
 
     def update(self, dt):
         player_pos = np.array(self.engine.camera.get_current_position(), dtype='f4')
-        direction = player_pos - self.pos
+        direction = player_pos - self.entity.pos
         direction[1] = 0.0
         dist = np.linalg.norm(direction)
         if dist > 0.5:
-            self.update_pos(self.pos + utils.normalize(direction) * self.speed * dt)
+            self.entity.update_pos(self.entity.pos + utils.normalize(direction) * self.speed * dt)
+            #print(f"{self.entity.pos}")
 
     def take_damage(self, amount):
         self.health -= amount
@@ -51,8 +53,9 @@ class Enemy(Entity):
         return self.health <= 0
 
     def destroy(self):
-        self.engine.remove_render_queue(self.form)
+        self.engine.remove_render_queue(self.entity.form)
         self.engine.remove_entity_queue(self)
+
 
 class Game:
     def __init__(self, engine):
@@ -61,7 +64,7 @@ class Game:
         self.engine.set_window_caption("Damien's Doom")
 
         self.camera = self.engine.create_camera()
-        self.player = Player(100, 10, 25)
+        self.player = Player(self.engine, 100, 10, 25)
 
         self.health_text = self.engine.draw_text(self.player.get_health_stylized(), (100, 100))
 
@@ -96,7 +99,7 @@ class Game:
 
         #self.engine.set_sun_position(self.engine.scalify((35, 42, 0)))
         self.engine.set_sun_position((35, 42, 0))
-        self.engine.create_billboard((35, 40, 0), "assets/overseer.png", 24, True)
+        self.engine.create_billboard((35, 42, 0), "assets/overseer.png", 24, True)
 
         self.create_enemy((0, 0, 0), "assets/test.png", health=100, speed=2, damage=2)
 
