@@ -150,8 +150,8 @@ class Engine:
         self.add_render_queue(text)
         return text
 
-    def update_text(self, text, new_value):
-        text.update_text(new_value)
+    def update_text(self, text, new_value, new_pos):
+        text.update_text(new_value, new_pos)
 
     # todo: idek
     #       collisions

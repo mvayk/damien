@@ -17,7 +17,7 @@ class Text:
         self._font = pygame.font.SysFont("Arial", font_size)
 
         self.texture = None
-        self.update_text(text)
+        self.update_text(text, self.position)
 
     def _make_texture(self, text):
         surf = self._font.render(text, True, self.color)
@@ -47,9 +47,12 @@ class Text:
             self.program, [(self.vbo, "2f 2f", "in_position", "in_uv")]
         )
 
-    def update_text(self, new_value):
+    def update_text(self, new_value, new_pos):
         if self.texture:
             self.texture.release()
+        self.w = new_pos[0]
+        self.h = new_pos[1]
+        self.position = new_pos
         self.texture, self.w, self.h = self._make_texture(str(new_value))
         self._rebuild_vao()
 

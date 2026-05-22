@@ -8,7 +8,7 @@ import utils.utils as utils
 from engine.entity import Entity
 
 class Player:
-    def __init__(self, engine, health: int, speed: int, damage: int, score: int = 0):
+    def __init__(self, engine, health: float, speed: float, damage: float, score: int = 0):
         self.engine = engine
         self.health = health
         self.speed = speed
@@ -21,7 +21,16 @@ class Player:
         self.take_damage(10)
 
     def get_health_stylized(self):
-        return f"Health: {self.health}"
+        return f"Health: {self.get_health()}"
+
+    def get_health(self):
+        return self.health
+
+    def get_score_stylized(self):
+        return f"Score: {self.get_score()}"
+
+    def get_score(self):
+        return self.score
 
     def take_damage(self, amount):
         self.health -= amount
@@ -33,7 +42,7 @@ class Player:
         print("for later")
 
 class Enemy:
-    def __init__(self, engine, game, pos, texture_path, health=100, speed=2, damage=10, size=1.0, hitbox=(0.5, 2.0), form=None):
+    def __init__(self, engine, game, pos, texture_path, health=100.0, speed=2.0, damage=10.0, size=1.0, hitbox=(0.5, 2.0), form=None):
         self.engine = engine
         self.health = health
         self.speed = speed
@@ -119,10 +128,17 @@ class Game:
         self.engine.add_game_queue(self)
         self.engine.set_window_caption("Damien's Doom")
 
+        self.wave = 1
+        self.wave_active = False
+
         self.camera = self.engine.create_camera()
         self.player = Player(self.engine, 100, 10, 25)
 
         self.health_text = self.engine.draw_text(self.player.get_health_stylized(), (100, 100))
+        self.wave_text= self.engine.draw_text(self.get_wave_stylized(), (100, 130))
+        self.score_text = self.engine.draw_text(self.player.get_score_stylized(), (100, 160))
+
+        self.crosshair_text = self.engine.draw_text("+", (self.camera.win_size[0] / 2, self.camera.win_size[1] / 2))
 
         self.enemies = [ ]
         self.game = self
@@ -130,7 +146,34 @@ class Game:
         self.engine.create_skybox((0.3, 0.1, 0.1), (0.1, 0.05, 0.05))
         self.create_world()
 
-    def create_enemy(self, pos, texture_path, health=100, speed=2, damage=10, size=1.0, hitbox=(0.5, 2.0)):
+    # 1, 2, 3, 4
+    def get_spawns(self, direction):
+        if direction == 1:
+            return (17, 0, 17)
+        elif direction == 2:
+            return (-17, 0, 17)
+        elif direction == 3:
+            return (17, 0, -17)
+        elif direction == 4:
+            return (-17, 0, -17)
+        else:
+            return (17, 0, 17)
+
+    def get_amplif(self, wave):
+        return wave * 1.25
+
+    def get_wave_stylized(self):
+        return f"Wave: {self.get_wave()}"
+
+    def get_wave(self):
+        return self.wave
+
+    def start_wave(self, wave):
+        w_amp = self.get_amplif(wave)
+        for _ in range(wave):
+            self.create_enemy(self.get_spawns(random.randint(1,4)), "assets/test.png", health=100 * w_amp, speed=2 * w_amp, damage=2 * w_amp)
+
+    def create_enemy(self, pos, texture_path, health=100.0, speed=2.0, damage=10.0, size=1.0, hitbox=(0.5, 2.0)):
         enemy = Enemy(self.engine, self.game, pos, texture_path, health, speed, damage, size, hitbox)
         self.enemies.append(enemy)
         return enemy
@@ -158,19 +201,27 @@ class Game:
         self.engine.set_sun_position((35, 42, 0))
         self.engine.create_billboard((35, 42, 0), "assets/overseer.png", 24, True)
 
-        for _penis in range(10):
-            self.create_enemy((0, 0, 0), "assets/test.png", health=100, speed=2, damage=2)
-
     # to be executed in engine loop
     def events(self):
         if not hasattr(self, "camera"):
             print("game hasnt initialized camera, game events not being checked.")
         else:
+            # handle waves
+            if not self.wave_active:
+                self.start_wave(self.get_wave())
+                self.wave_active = True
+
+            if len(self.enemies) == 0 and self.wave_active:
+                self.wave += 1
+                self.wave_active = False
+
             # for event in pygame.event.get():
             #     pass
             player_position = self.player.entity.pos = self.camera.get_current_position()
-            self.engine.update_text(self.health_text, self.player.get_health_stylized())
-            print(self.player.get_health_stylized())
+            self.engine.update_text(self.health_text, self.player.get_health_stylized(), (100, 100))
+            self.engine.update_text(self.wave_text, self.get_wave_stylized(), (100, 130))
+            self.engine.update_text(self.score_text, self.player.get_score_stylized(), (100, 160))
+            self.engine.update_text(self.crosshair_text, "+", (self.camera.win_size[0] / 2, self.camera.win_size[1] / 2))
             #print(player_position)
 
             for e in self.enemies:
