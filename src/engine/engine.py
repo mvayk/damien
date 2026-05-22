@@ -30,6 +30,10 @@ class Engine:
 
         self.WIN_SIZE = (800, 600)
 
+        # resource management
+        self.texture_cache = { }
+        self.billboard_vbo_cache = { }
+
         pygame.init()
         pygame.display.set_mode(
             (self.WIN_SIZE), flags=pygame.OPENGL | pygame.DOUBLEBUF | pygame.RESIZABLE, vsync=False
@@ -136,9 +140,31 @@ class Engine:
             pass
 
     def create_billboard(self, pos, texture_path, size=1.0, follow_camera=False):
-        billboard = Billboard(self.ctx, self.billboard_program, texture_path, pos, size, follow_camera)
+        billboard = Billboard(self.ctx, self.billboard_program, texture_path, pos, self, size, follow_camera)
         self.add_render_queue(billboard)
         return billboard
+
+    def get_billboard_vbo(self, ctx, program, size):
+        if size not in self.billboard_vbo_cache:
+            s = size / 2
+            vertices = np.array([
+                -s,  0.0,  0.0, 1.0,
+                 s,  0.0,  1.0, 1.0,
+                 s,  size, 1.0, 0.0,
+                -s,  0.0,  0.0, 1.0,
+                 s,  size, 1.0, 0.0,
+                -s,  size, 0.0, 0.0,
+            ], dtype="f4")
+            vbo = ctx.buffer(vertices.tobytes())
+            self.billboard_vbo_cache[size] = vbo
+        return self.billboard_vbo_cache[size]
+
+    def get_texture(self, ctx, path):
+        if path not in self.texture_cache:
+            img = pygame.image.load(path).convert_alpha()
+            img_data = pygame.image.tobytes(img, "RGBA", False)
+            self.texture_cache[path] = ctx.texture(img.get_size(), 4, img_data)
+        return self.texture_cache[path]
 
     def create_structure(self, p1, p2, p3, p4, color):
         nonentity = Nonentity(self, p1, p2, p3, p4, color)

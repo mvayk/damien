@@ -66,7 +66,7 @@ class Player:
             self.over()
 
     def over(self):
-        print("for later")
+        pygame.quit()
 
 class Enemy:
     def __init__(self, engine, game, pos, texture_path, health=100.0, speed=2.0, damage=10.0, size=1.0, damage_max_cooldown=1.0, hitbox=(0.5, 2.0), form=None):
@@ -240,6 +240,7 @@ class Game:
                 self.wave_active = True
 
             if len(self.enemies) == 0 and self.wave_active:
+                self.player.health = 100
                 self.wave += 1
                 self.wave_active = False
 
