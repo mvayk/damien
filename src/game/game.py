@@ -8,17 +8,44 @@ import utils.utils as utils
 from engine.entity import Entity
 
 class Player:
-    def __init__(self, engine, health: float, speed: float, damage: float, score: int = 0):
+    def __init__(self, engine, game, health: float, speed: float, damage: float, score: int = 0):
         self.engine = engine
         self.health = health
         self.speed = speed
         self.damage = damage
+        self.game = game
 
         self.score = score
 
         self.entity = self.engine.create_entity((0, 0, 0), (1, 2), True, None)
 
-        self.take_damage(10)
+    def shoot(self):
+        origin = np.array(self.engine.camera.get_current_position(), dtype='f4')
+        direction = self.engine.camera.get_front_dir()
+
+        closest_enemy = None
+        closest_dist = float('inf')
+
+        for enemy in self.game.enemies:
+            to_enemy = enemy.entity.pos - origin
+            to_enemy[1] = 0.0
+
+            t = np.dot(to_enemy, direction)
+            if t < 0:
+                continue
+
+            closest_point = origin + direction * t
+            dist_to_ray = np.linalg.norm(enemy.entity.pos[[0,2]] - closest_point[[0,2]])
+
+            if dist_to_ray < enemy.entity.hitbox_radius and t < closest_dist:
+                closest_dist = t
+                closest_enemy = enemy
+
+        if closest_enemy:
+            closest_enemy.take_damage(self.damage)
+            if closest_enemy.is_dead():
+                closest_enemy.destroy()
+                self.game.enemies.remove(closest_enemy)
 
     def get_health_stylized(self):
         return f"Health: {self.get_health()}"
@@ -42,7 +69,7 @@ class Player:
         print("for later")
 
 class Enemy:
-    def __init__(self, engine, game, pos, texture_path, health=100.0, speed=2.0, damage=10.0, size=1.0, hitbox=(0.5, 2.0), form=None):
+    def __init__(self, engine, game, pos, texture_path, health=100.0, speed=2.0, damage=10.0, size=1.0, damage_max_cooldown=1.0, hitbox=(0.5, 2.0), form=None):
         self.engine = engine
         self.health = health
         self.speed = speed
@@ -50,7 +77,8 @@ class Enemy:
         self.game = game
         self.size = size
 
-        self.damage_cooldown = 0.5
+        self.damage_max_cooldown = damage_max_cooldown
+        self.damage_cooldown = 0
 
         self.entity = self.engine.create_entity(pos, hitbox, False, None)
         billboard = engine.create_billboard(pos, texture_path, size)
@@ -96,7 +124,7 @@ class Enemy:
                 if dist < (self.entity.hitbox_radius + e.hitbox_radius):
                     if self.damage_cooldown == 0.0:
                         self.game.player.take_damage(self.damage)
-                        self.damage_cooldown = 1.0
+                        self.damage_cooldown = self.damage_max_cooldown
                 break
 
         if dist > 0.5:
@@ -120,7 +148,7 @@ class Enemy:
 
     def destroy(self):
         self.engine.remove_render_queue(self.entity.form)
-        self.engine.remove_entity_queue(self)
+        self.engine.remove_entity_queue(self.entity)
 
 class Game:
     def __init__(self, engine):
@@ -128,11 +156,13 @@ class Game:
         self.engine.add_game_queue(self)
         self.engine.set_window_caption("Damien's Doom")
 
+        self.game = self
+
         self.wave = 1
         self.wave_active = False
 
         self.camera = self.engine.create_camera()
-        self.player = Player(self.engine, 100, 10, 25)
+        self.player = Player(self.engine, self.game, 100, 10, 25)
 
         self.health_text = self.engine.draw_text(self.player.get_health_stylized(), (100, 100))
         self.wave_text= self.engine.draw_text(self.get_wave_stylized(), (100, 130))
@@ -171,16 +201,16 @@ class Game:
     def start_wave(self, wave):
         w_amp = self.get_amplif(wave)
         for _ in range(wave):
-            self.create_enemy(self.get_spawns(random.randint(1,4)), "assets/test.png", health=100 * w_amp, speed=2 * w_amp, damage=2 * w_amp)
+            self.create_enemy(self.get_spawns(random.randint(1,4)), "assets/test.png", health=100 * w_amp, speed=2 * w_amp, damage=2 * w_amp, size=1.0, damage_max_cooldown=0.2)
 
-    def create_enemy(self, pos, texture_path, health=100.0, speed=2.0, damage=10.0, size=1.0, hitbox=(0.5, 2.0)):
-        enemy = Enemy(self.engine, self.game, pos, texture_path, health, speed, damage, size, hitbox)
+    def create_enemy(self, pos, texture_path, health=100.0, speed=2.0, damage=10.0, size=1.0, damage_max_cooldown=1.0, hitbox=(0.5, 2.0)):
+        enemy = Enemy(self.engine, self.game, pos, texture_path, health, speed, damage, size, damage_max_cooldown, hitbox)
         self.enemies.append(enemy)
         return enemy
 
     def destroy_enemy(self, enemy):
-        self.enemies.remove(enemy)
         enemy.destroy()
+        self.enemies.remove(enemy)
 
     def create_world(self):
         # baseplate
@@ -201,12 +231,10 @@ class Game:
         self.engine.set_sun_position((35, 42, 0))
         self.engine.create_billboard((35, 42, 0), "assets/overseer.png", 24, True)
 
-    # to be executed in engine loop
     def events(self):
         if not hasattr(self, "camera"):
             print("game hasnt initialized camera, game events not being checked.")
         else:
-            # handle waves
             if not self.wave_active:
                 self.start_wave(self.get_wave())
                 self.wave_active = True
@@ -215,14 +243,11 @@ class Game:
                 self.wave += 1
                 self.wave_active = False
 
-            # for event in pygame.event.get():
-            #     pass
             player_position = self.player.entity.pos = self.camera.get_current_position()
             self.engine.update_text(self.health_text, self.player.get_health_stylized(), (100, 100))
             self.engine.update_text(self.wave_text, self.get_wave_stylized(), (100, 130))
             self.engine.update_text(self.score_text, self.player.get_score_stylized(), (100, 160))
             self.engine.update_text(self.crosshair_text, "+", (self.camera.win_size[0] / 2, self.camera.win_size[1] / 2))
-            #print(player_position)
 
             for e in self.enemies:
                 e.update(self.engine.dt)
@@ -231,7 +256,6 @@ class Game:
             front_dir = self.camera.get_front_dir()
             up = np.array([0.0, 1.0, 0.0], dtype="f4")
             right = utils.normalize(np.cross(front, up))
-            #vel = self.camera.speed * self.engine.dt
             vel = self.player.speed * self.engine.dt
 
             keys = pygame.key.get_pressed()
@@ -244,9 +268,15 @@ class Game:
                 move -= front_dir
             if keys[pygame.K_d]:
                 move += right
-            if keys[pygame.K_f]:
-                for e in self.enemies:
-                    self.destroy_enemy(e)
+
+            for event in self.engine.events:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_f:
+                        for e in self.enemies.copy():
+                            self.destroy_enemy(e)
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        self.player.shoot()
 
             if np.linalg.norm(move) > 0:
                 move = utils.normalize(move)

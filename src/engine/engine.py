@@ -107,10 +107,10 @@ class Engine:
 
     def remove_render_queue(self, thing):
         try:
-            self.games.remove(thing)
+            self.render_queue.remove(thing)
             print(f"[ENGINE] Removed {thing}")
         except ValueError:
-            print(f"[ENGINE] Attempted to remove {thing} from game queue")
+            print(f"[ENGINE] Failed to remove {thing} from game queue")
             pass
 
     def add_game_queue(self, game):
@@ -121,7 +121,7 @@ class Engine:
             self.games.remove(thing)
             print(f"[ENGINE] Removed {thing}")
         except ValueError:
-            print(f"[ENGINE] Attempted to remove {thing} from game queue")
+            print(f"[ENGINE] Failed to remove {thing} from game queue")
             pass
 
     def add_entity_queue(self, entity):
@@ -129,10 +129,10 @@ class Engine:
 
     def remove_entity_queue(self, entity):
         try:
-            self.games.remove(entity)
+            self.entities.remove(entity)
             print(f"[ENGINE] Removed {entity}")
         except ValueError:
-            print(f"[ENGINE] Attempted to remove {entity} from entity queue")
+            print(f"[ENGINE] Failed to remove {entity} from entity queue")
             pass
 
     def create_billboard(self, pos, texture_path, size=1.0, follow_camera=False):
@@ -157,10 +157,12 @@ class Engine:
     #       collisions
 
     def handle_events(self):
+        self.events = [ ]
         if not hasattr(self, "camera"):
             print("[ENGINE] game hasnt initialized camera, events not being handled.")
         else:
             for event in pygame.event.get():
+                self.events.append(event)
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
