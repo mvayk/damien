@@ -94,8 +94,8 @@ class Engine:
         self.camera = camera.Camera(self.WIN_SIZE)
         return self.camera
 
-    def create_entity(self, pos, hitbox, form):
-        entity = Entity(self, pos, hitbox, form)
+    def create_entity(self, pos, hitbox, player, form):
+        entity = Entity(self, pos, hitbox, player, form)
         self.add_entity_queue(entity)
         return entity
 

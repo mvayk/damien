@@ -18,11 +18,19 @@ class Player:
 
         self.entity = self.engine.create_entity((0, 0, 0), (1, 2), True, None)
 
+        self.take_damage(10)
+
     def get_health_stylized(self):
         return f"Health: {self.health}"
 
     def take_damage(self, amount):
         self.health -= amount
+
+        if self.health <= 0:
+            self.over()
+
+    def over(self):
+        print("for later")
 
 class Enemy:
     def __init__(self, engine, game, pos, texture_path, health=100, speed=2, damage=10, size=1.0, hitbox=(0.5, 2.0), form=None):
@@ -32,6 +40,8 @@ class Enemy:
         self.damage = damage
         self.game = game
         self.size = size
+
+        self.damage_cooldown = 0.5
 
         self.entity = self.engine.create_entity(pos, hitbox, False, None)
         billboard = engine.create_billboard(pos, texture_path, size)
@@ -66,7 +76,19 @@ class Enemy:
         dist = np.linalg.norm(direction)
 
         separation = self.get_separation(self.game.enemies)
-        sep_strength = np.linalg.norm(separation)
+        sep_strength = np.linalg.norm(separation) + 5
+
+        self.damage_cooldown = max(0.0, self.damage_cooldown - dt)
+
+        for e in self.engine.entities:
+            if e.player:
+                diff = self.entity.pos[[0,2]] - e.pos[[0,2]]
+                dist = np.linalg.norm(diff)
+                if dist < (self.entity.hitbox_radius + e.hitbox_radius):
+                    if self.damage_cooldown == 0.0:
+                        self.game.player.take_damage(self.damage)
+                        self.damage_cooldown = 1.0
+                break
 
         if dist > 0.5:
             seek = utils.normalize(direction)
@@ -136,7 +158,7 @@ class Game:
         self.engine.set_sun_position((35, 42, 0))
         self.engine.create_billboard((35, 42, 0), "assets/overseer.png", 24, True)
 
-        for _penis in range(25):
+        for _penis in range(10):
             self.create_enemy((0, 0, 0), "assets/test.png", health=100, speed=2, damage=2)
 
     # to be executed in engine loop
@@ -148,6 +170,7 @@ class Game:
             #     pass
             player_position = self.player.entity.pos = self.camera.get_current_position()
             self.engine.update_text(self.health_text, self.player.get_health_stylized())
+            print(self.player.get_health_stylized())
             #print(player_position)
 
             for e in self.enemies:
