@@ -16,7 +16,7 @@ class Player:
 
         self.score = score
 
-        self.entity = self.engine.create_entity((0, 0, 0), (1, 2), None)
+        self.entity = self.engine.create_entity((0, 0, 0), (1, 2), True, None)
 
     def get_health_stylized(self):
         return f"Health: {self.health}"
@@ -25,24 +25,61 @@ class Player:
         self.health -= amount
 
 class Enemy:
-    def __init__(self, engine, pos, texture_path, health=100, speed=2, damage=10, size=1.0, hitbox=(0.5, 2.0), form=None):
+    def __init__(self, engine, game, pos, texture_path, health=100, speed=2, damage=10, size=1.0, hitbox=(0.5, 2.0), form=None):
         self.engine = engine
         self.health = health
         self.speed = speed
         self.damage = damage
+        self.game = game
+        self.size = size
 
-        self.entity = self.engine.create_entity(pos, hitbox, None)
+        self.entity = self.engine.create_entity(pos, hitbox, False, None)
         billboard = engine.create_billboard(pos, texture_path, size)
         self.entity.update_form(billboard)
+
+    def get_separation(self, enemies):
+        separation = np.array([0.0, 0.0, 0.0], dtype='f4')
+        for other in enemies:
+            if other is self:
+                continue
+            diff = self.entity.pos - other.entity.pos
+            diff[1] = 0.0
+            dist = np.linalg.norm(diff)
+            if 0 < dist < 3.0:
+                separation += utils.normalize(diff) * (1.0 - dist / 3.0)
+        return separation
+
+    # stop enemy from going outside of map and from sliding across boundary
+    def _clamp_to_bounds(self, pos, bounds=19.7):
+        bounds = 19.7 - self.size
+        if abs(pos[0]) > bounds:
+            pos[0] = float(max(-bounds, min(bounds, pos[0])))
+        if abs(pos[2]) > bounds:
+            pos[2] = float(max(-bounds, min(bounds, pos[2])))
+        pos[1] = 0.0 # just in case
+        return pos
 
     def update(self, dt):
         player_pos = np.array(self.engine.camera.get_current_position(), dtype='f4')
         direction = player_pos - self.entity.pos
         direction[1] = 0.0
         dist = np.linalg.norm(direction)
+
+        separation = self.get_separation(self.game.enemies)
+        sep_strength = np.linalg.norm(separation)
+
         if dist > 0.5:
-            self.entity.update_pos(self.entity.pos + utils.normalize(direction) * self.speed * dt)
-            #print(f"{self.entity.pos}")
+            seek = utils.normalize(direction)
+
+            if sep_strength > 0:
+                weight = min(sep_strength, 1.5)
+                move_dir = utils.normalize(seek + separation * weight)
+            else:
+                move_dir = seek
+
+            new_pos = self.entity.pos + move_dir * self.speed * dt
+            new_pos = self._clamp_to_bounds(new_pos)
+            self.entity.update_pos(new_pos)
 
     def take_damage(self, amount):
         self.health -= amount
@@ -53,7 +90,6 @@ class Enemy:
     def destroy(self):
         self.engine.remove_render_queue(self.entity.form)
         self.engine.remove_entity_queue(self)
-
 
 class Game:
     def __init__(self, engine):
@@ -67,12 +103,13 @@ class Game:
         self.health_text = self.engine.draw_text(self.player.get_health_stylized(), (100, 100))
 
         self.enemies = [ ]
+        self.game = self
 
         self.engine.create_skybox((0.3, 0.1, 0.1), (0.1, 0.05, 0.05))
         self.create_world()
 
     def create_enemy(self, pos, texture_path, health=100, speed=2, damage=10, size=1.0, hitbox=(0.5, 2.0)):
-        enemy = Enemy(self.engine, pos, texture_path, health, speed, damage, size, hitbox)
+        enemy = Enemy(self.engine, self.game, pos, texture_path, health, speed, damage, size, hitbox)
         self.enemies.append(enemy)
         return enemy
 
@@ -99,7 +136,8 @@ class Game:
         self.engine.set_sun_position((35, 42, 0))
         self.engine.create_billboard((35, 42, 0), "assets/overseer.png", 24, True)
 
-        self.create_enemy((0, 0, 0), "assets/test.png", health=100, speed=2, damage=2)
+        for _penis in range(25):
+            self.create_enemy((0, 0, 0), "assets/test.png", health=100, speed=2, damage=2)
 
     # to be executed in engine loop
     def events(self):
@@ -110,7 +148,7 @@ class Game:
             #     pass
             player_position = self.player.entity.pos = self.camera.get_current_position()
             self.engine.update_text(self.health_text, self.player.get_health_stylized())
-            print(player_position)
+            #print(player_position)
 
             for e in self.enemies:
                 e.update(self.engine.dt)
