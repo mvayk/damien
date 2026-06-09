@@ -162,7 +162,7 @@ class Game:
         self.wave_active = False
 
         self.camera = self.engine.create_camera()
-        self.player = Player(self.engine, self.game, 100, 10, 25)
+        self.player = Player(self.engine, self.game, 100, 10, 50)
 
         self.health_text = self.engine.draw_text(self.player.get_health_stylized(), (100, 100))
         self.wave_text= self.engine.draw_text(self.get_wave_stylized(), (100, 130))
@@ -189,8 +189,8 @@ class Game:
         else:
             return (17, 0, 17)
 
-    def get_amplif(self, wave):
-        return wave * 1.25
+    def get_amplif(self, wave, exponent=1.2):
+        return (wave - 1) ** exponent + 1
 
     def get_wave_stylized(self):
         return f"Wave: {self.get_wave()}"
@@ -201,7 +201,7 @@ class Game:
     def start_wave(self, wave):
         w_amp = self.get_amplif(wave)
         for _ in range(wave):
-            self.create_enemy(self.get_spawns(random.randint(1,4)), "assets/test.png", health=100 * w_amp, speed=2 * w_amp, damage=2 * w_amp, size=1.0, damage_max_cooldown=0.2)
+            self.create_enemy(self.get_spawns(random.randint(1,4)), "assets/test.png", health=100 * w_amp, speed=1 * w_amp, damage=2 * w_amp, size=1.0, damage_max_cooldown=1)
 
     def create_enemy(self, pos, texture_path, health=100.0, speed=2.0, damage=10.0, size=1.0, damage_max_cooldown=1.0, hitbox=(0.5, 2.0)):
         enemy = Enemy(self.engine, self.game, pos, texture_path, health, speed, damage, size, damage_max_cooldown, hitbox)
